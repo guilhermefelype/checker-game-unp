@@ -22,13 +22,14 @@ float boardRotation = 0.0f; // Rotação do tabuleiro
 float zOffset = 0.5f;       // Deslocamento inicial no eixo Z (alterado para 0.5)
 
 // Configuração inicial do tabuleiro
-void initializeBoard() {
+void initializeBoard () {
     pieces.clear();
     // Peças pretas (topo do tabuleiro)
     for (int z = 0; z < 3; z++) {
         for (int x = 0; x < 8; x++) {
             if ((x + z) % 2 == 1) {
-                pieces.emplace_back(Position(x, z), false); // Posições das peças pretas
+                pieces.emplace_back(Position(x, z), false); // Posiçõ
+                //es das peças pretas
             }
         }
     }
