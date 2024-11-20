@@ -1,15 +1,21 @@
 #include <GL/glut.h>
 #include <vector>
 #include <cmath>
-#include <iostream> // Inclui para uso do console
+#include <iostream>
+#include <optional>
+
+#include "movement_handler.cpp"
+#include "capture_handler.cpp"
 
 // Estruturas de dados
-struct Position {
+struct Position
+{
     int x, z;
     Position(int _x, int _z) : x(_x), z(_z) {}
 };
 
-struct Piece {
+struct Piece
+{
     Position pos;
     bool isWhite;
     bool isKing;
@@ -20,47 +26,101 @@ struct Piece {
 std::vector<Piece> pieces;
 float boardRotation = 0.0f; // Rotação do tabuleiro
 float zOffset = 0.5f;       // Deslocamento inicial no eixo Z (alterado para 0.5)
+bool isWhiteTurn = true;    // Controle de turnos
 
 // Configuração inicial do tabuleiro
-void initializeBoard () {
+void initializeBoard()
+{
     pieces.clear();
     // Peças pretas (topo do tabuleiro)
-    for (int z = 0; z < 3; z++) {
-        for (int x = 0; x < 8; x++) {
-            if ((x + z) % 2 == 1) {
-                pieces.emplace_back(Position(x, z), false); // Posiçõ
-                //es das peças pretas
+    for (int z = 0; z < 3; z++)
+    {
+        for (int x = 0; x < 8; x++)
+        {
+            if ((x + z) % 2 == 1)
+            {
+                pieces.emplace_back(Position(x, z), false); // Posições das peças pretas
             }
         }
     }
     // Peças brancas (base do tabuleiro)
-    for (int z = 5; z < 8; z++) {
-        for (int x = 0; x < 8; x++) {
-            if ((x + z) % 2 == 1) {
+    for (int z = 5; z < 8; z++)
+    {
+        for (int x = 0; x < 8; x++)
+        {
+            if ((x + z) % 2 == 1)
+            {
                 pieces.emplace_back(Position(x, z), true); // Posições das peças brancas
             }
         }
     }
 }
 
+// Encontra uma peça na posição fornecida
+std::optional<Piece *> findPieceAt(int x, int z)
+{
+    for (auto &piece : pieces)
+    {
+        if (piece.pos.x == x && piece.pos.z == z)
+        {
+            return &piece;
+        }
+    }
+    return std::nullopt;
+}
+
+// Função de entrada do teclado para mover as peças
+void keyboard(unsigned char key, int x, int y)
+{
+    int selectedX, selectedZ, targetX, targetZ;
+    std::cout << "Selecione a posição da peça (x z): ";
+    std::cin >> selectedX >> selectedZ;
+    auto pieceOpt = findPieceAt(selectedX, selectedZ);
+    if (!pieceOpt.has_value() || (*pieceOpt)->isWhite != isWhiteTurn)
+    {
+        std::cout << "Movimento inválido: Nenhuma peça encontrada ou é o turno do oponente." << std::endl;
+        return;
+    }
+    Piece *piece = *pieceOpt;
+    std::cout << "Selecione a posição de destino (x z): ";
+    std::cin >> targetX >> targetZ;
+    if (isValidMove(*piece, targetX, targetZ, isWhiteTurn, pieces))
+    {
+        if (isCapturePossible(*piece, targetX, targetZ, pieces))
+        {
+            capturePiece(*piece, targetX, targetZ, pieces);
+        }
+        movePiece(*piece, targetX, targetZ, pieces, isWhiteTurn);
+    }
+    else
+    {
+        std::cout << "Movimento inválido." << std::endl;
+    }
+    glutPostRedisplay();
+}
+
 // Desenha uma peça
-void drawPiece(const Piece& piece) {
+void drawPiece(const Piece &piece)
+{
     glPushMatrix();
     // Posiciona a peça no tabuleiro com deslocamento em Z
     glTranslatef(piece.pos.x - 3.5f + 0.5f, 0.2f, piece.pos.z - 3.5f + zOffset);
 
     // Define a cor da peça
-    if (piece.isWhite) {
+    if (piece.isWhite)
+    {
         glColor3f(1.0f, 1.0f, 1.0f); // Peça branca
-    } else {
+    }
+    else
+    {
         glColor3f(0.2f, 0.2f, 0.2f); // Peça preta
     }
 
     // Definir material para as peças (ajuda a aplicar o efeito de iluminação)
-    GLfloat mat_ambient[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-    GLfloat mat_diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
-    GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    GLfloat mat_shininess[] = { 50.0f }; // Brilho das peças (efeito de reflexos)
+    GLfloat mat_ambient[] = {0.5f, 0.5f, 0.5f, 1.0f};
+    GLfloat mat_diffuse[] = {0.8f, 0.8f, 0.8f, 1.0f};
+    GLfloat mat_specular[] = {1.0f, 1.0f, 1.0f, 1.0f};
+    GLfloat mat_shininess[] = {50.0f}; // Brilho das peças (efeito de reflexos)
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_ambient);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diffuse);
@@ -71,7 +131,7 @@ void drawPiece(const Piece& piece) {
     glRotatef(-90.0f, 1.0f, 0.0f, 0.0f); // Rotação no eixo X
 
     // Corpo da peça
-    GLUquadric* quad = gluNewQuadric();
+    GLUquadric *quad = gluNewQuadric();
     gluCylinder(quad, 0.4f, 0.4f, 0.2f, 32, 32);
 
     // Base inferior da peça
@@ -90,14 +150,20 @@ void drawPiece(const Piece& piece) {
 }
 
 // Desenha o tabuleiro
-void drawBoard() {
-    for (int z = 0; z < 8; z++) {
-        for (int x = 0; x < 8; x++) {
+void drawBoard()
+{
+    for (int z = 0; z < 8; z++)
+    {
+        for (int x = 0; x < 8; x++)
+        {
             glPushMatrix();
             glTranslatef(x - 3.5f, 0.0f, z - 3.5f); // Centraliza as casas no tabuleiro
-            if ((x + z) % 2 == 0) {
+            if ((x + z) % 2 == 0)
+            {
                 glColor3f(0.8f, 0.8f, 0.8f); // Casas brancas
-            } else {
+            }
+            else
+            {
                 glColor3f(0.3f, 0.3f, 0.3f); // Casas pretas
             }
             glBegin(GL_QUADS);
@@ -112,7 +178,8 @@ void drawBoard() {
 }
 
 // Renderização
-void display() {
+void display()
+{
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
 
@@ -124,7 +191,8 @@ void display() {
 
     // Desenha tabuleiro e peças
     drawBoard();
-    for (const auto& piece : pieces) {
+    for (const auto &piece : pieces)
+    {
         drawPiece(piece);
     }
 
@@ -132,7 +200,8 @@ void display() {
 }
 
 // Função de redimensionamento da janela
-void reshape(int w, int h) {
+void reshape(int w, int h)
+{
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -141,16 +210,17 @@ void reshape(int w, int h) {
 }
 
 // Inicialização do OpenGL
-void initOpenGL() {
+void initOpenGL()
+{
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_COLOR_MATERIAL);
 
     // Configura a posição da luz
-    GLfloat light_position[] = { 0.0f, 10.0f, 5.0f, 1.0f };
-    GLfloat light_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-    GLfloat light_diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    GLfloat light_position[] = {0.0f, 10.0f, 5.0f, 1.0f};
+    GLfloat light_ambient[] = {0.2f, 0.2f, 0.2f, 1.0f};
+    GLfloat light_diffuse[] = {0.8f, 0.8f, 0.8f, 1.0f};
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
@@ -159,7 +229,8 @@ void initOpenGL() {
 }
 
 // Função principal
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
@@ -169,6 +240,7 @@ int main(int argc, char** argv) {
 
     glutDisplayFunc(display);
     glutReshapeFunc(reshape);
+    glutKeyboardFunc(keyboard);
 
     glutMainLoop();
     return 0;
