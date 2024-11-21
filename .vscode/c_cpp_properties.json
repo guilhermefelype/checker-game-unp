@@ -1,15 +1,17 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "macOS",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/opt/homebrew/include", // Inclui o diretório geral do Homebrew
+                "/opt/homebrew/include/GL" // Inclui o diretório específico do GLUT
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-clang-x64"
+            "intelliSenseMode": "macos-clang-x64"
         }
     ],
     "version": 4
