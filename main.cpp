@@ -12,6 +12,14 @@ float boardRotation = 0.0f;
 float zOffset = 0.5f;
 bool isWhiteTurn = true;
 
+// Função para imprimir as posições das peças no tabuleiro
+void printBoardState() {
+    std::cout << "Estado inicial do tabuleiro:" << std::endl;
+    for (const auto& piece : pieces) {
+        std::cout << (piece.isWhite ? "Peça branca" : "Peça preta") << " na posição (" << piece.pos.x << ", " << piece.pos.z << ")" << std::endl;
+    }
+}
+
 // Configuração inicial do tabuleiro
 void initializeBoard() {
     pieces.clear();
@@ -31,6 +39,9 @@ void initializeBoard() {
             }
         }
     }
+
+    // Imprimir o estado inicial do tabuleiro para debug
+    printBoardState();
 }
 
 // Encontra uma peça na posição fornecida
@@ -45,25 +56,42 @@ Piece* findPieceAt(int x, int z) {
 
 // Função de entrada do teclado para mover as peças
 void keyboard(unsigned char key, int x, int y) {
-    int selectedX, selectedZ, targetX, targetZ;
-    std::cout << "Selecione a posição da peça (x z): ";
-    std::cin >> selectedX >> selectedZ;
-    Piece* piece = findPieceAt(selectedX, selectedZ);
-    if (piece == nullptr || piece->isWhite != isWhiteTurn) {
-        std::cout << "Movimento inválido: Nenhuma peça encontrada ou é o turno do oponente." << std::endl;
-        return;
-    }
-    std::cout << "Selecione a posição de destino (x z): ";
-    std::cin >> targetX >> targetZ;
-    if (isValidMove(*piece, targetX, targetZ, isWhiteTurn, pieces)) {
+    if (key == ' ') { // Somente permitir a interação quando a tecla de espaço for pressionada
+        int selectedX, selectedZ, targetX, targetZ;
+        std::cout << "Selecione a posição da peça (x z): ";
+        std::cin >> selectedX >> selectedZ;
+
+        Piece* piece = findPieceAt(selectedX, selectedZ);
+        if (piece == nullptr) {
+            std::cout << "Movimento inválido: Nenhuma peça encontrada na posição (" << selectedX << ", " << selectedZ << ")." << std::endl;
+            return;
+        }
+
+        if (piece->isWhite != isWhiteTurn) {
+            std::cout << "Movimento inválido: É o turno das " << (isWhiteTurn ? "peças brancas" : "peças pretas") << "." << std::endl;
+            return;
+        }
+
+        std::cout << "Selecione a posição de destino (x z): ";
+        std::cin >> targetX >> targetZ;
+
+        if (!isValidMove(*piece, targetX, targetZ, isWhiteTurn, pieces)) {
+            std::cout << "Movimento inválido: Movimento não permitido de (" << selectedX << ", " << selectedZ << ") para (" << targetX << ", " << targetZ << ")." << std::endl;
+            return;
+        }
+
         if (isCapturePossible(*piece, targetX, targetZ, pieces)) {
+            std::cout << "Captura possível! Capturando a peça adversária..." << std::endl;
             capturePiece(*piece, targetX, targetZ, pieces);
         }
+
         movePiece(*piece, targetX, targetZ, pieces, isWhiteTurn);
+        std::cout << "Movimento realizado de (" << selectedX << ", " << selectedZ << ") para (" << targetX << ", " << targetZ << ")." << std::endl;
+
+        glutPostRedisplay();
     } else {
-        std::cout << "Movimento inválido." << std::endl;
+        std::cout << "Pressione a tecla de espaço para iniciar um movimento." << std::endl;
     }
-    glutPostRedisplay();
 }
 
 // Desenha uma peça
