@@ -1,4 +1,4 @@
-#include "/opt/homebrew/include/GL/glut.h"
+#include <GL/glut.h>
 #include <vector>
 #include <cmath>
 #include <iostream>
@@ -11,6 +11,9 @@ std::vector<Piece> pieces;
 float boardRotation = 0.0f;
 float zOffset = 0.5f;
 bool isWhiteTurn = true;
+int windowWidth = 800;
+int windowHeight = 600;
+float aspectRatio;
 
 // Função para imprimir as posições das peças no tabuleiro
 void printBoardState() {
@@ -54,13 +57,28 @@ Piece* findPieceAt(int x, int z) {
     return nullptr;
 }
 
-// Função de entrada do teclado para mover as peças
-void keyboard(unsigned char key, int x, int y) {
-    if (key == ' ') { // Somente permitir a interação quando a tecla de espaço for pressionada
-        int selectedX, selectedZ, targetX, targetZ;
-        std::cout << "Selecione a posição da peça (x z): ";
-        std::cin >> selectedX >> selectedZ;
+// Função para processar o clique do mouse
+void mouse(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        // Converte as coordenadas 2D do clique para 3D
+        float winX = (float)x;
+        float winY = (float)(windowHeight - y); // O Y da janela é invertido
 
+        // Mapeia as coordenadas do mouse para as coordenadas do tabuleiro
+        int selectedX = (int)(winX / (windowWidth / 28));
+        int selectedZ = (int)(winY / (windowHeight / 27));
+
+        // Desloca as coordenadas para a esquerda e para baixo, aplicando um fator de 60%
+        selectedX = (int)(selectedX * 0.7f);  // 60% para a esquerda
+        selectedZ = (int)(selectedZ * 0.6f);  // 60% para baixo
+
+        // Ajusta as coordenadas para o sistema de coordenadas do tabuleiro 3D (0, 0) no canto inferior esquerdo
+        selectedX = selectedX - 4;  // Inverte a coordenada X
+        selectedZ = selectedZ - 10;  // Inverte a coordenada Z
+
+        std::cout << "Clicado em (" << selectedX << ", " << selectedZ << ")" << std::endl;
+
+        // Verificar se existe uma peça nessa posição
         Piece* piece = findPieceAt(selectedX, selectedZ);
         if (piece == nullptr) {
             std::cout << "Movimento inválido: Nenhuma peça encontrada na posição (" << selectedX << ", " << selectedZ << ")." << std::endl;
@@ -72,8 +90,9 @@ void keyboard(unsigned char key, int x, int y) {
             return;
         }
 
-        std::cout << "Selecione a posição de destino (x z): ";
-        std::cin >> targetX >> targetZ;
+        // Seleciona a posição de destino (exemplo simples)
+        int targetX = selectedX + 1;
+        int targetZ = selectedZ + 1;
 
         if (!isValidMove(*piece, targetX, targetZ, isWhiteTurn, pieces)) {
             std::cout << "Movimento inválido: Movimento não permitido de (" << selectedX << ", " << selectedZ << ") para (" << targetX << ", " << targetZ << ")." << std::endl;
@@ -89,8 +108,6 @@ void keyboard(unsigned char key, int x, int y) {
         std::cout << "Movimento realizado de (" << selectedX << ", " << selectedZ << ") para (" << targetX << ", " << targetZ << ")." << std::endl;
 
         glutPostRedisplay();
-    } else {
-        std::cout << "Pressione a tecla de espaço para iniciar um movimento." << std::endl;
     }
 }
 
@@ -160,52 +177,56 @@ void display() {
     glLoadIdentity();
     gluLookAt(0.0f, 12.0f, 8.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
     glRotatef(boardRotation, 0.0f, 1.0f, 0.0f);
+
     drawBoard();
     for (const auto& piece : pieces) {
         drawPiece(piece);
     }
+
     glutSwapBuffers();
 }
 
-// Função de redimensionamento da janela
+// Função de redimensionamento
 void reshape(int w, int h) {
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0f, (float)w / h, 0.1f, 100.0f);
+    
+    // Configuração da projeção ortográfica
+    float orthoSize = 4.0f; // Define o tamanho da visualização
+    if (w <= h) {
+        glOrtho(-orthoSize, orthoSize, 
+                -orthoSize * (float)h / (float)w, 
+                 orthoSize * (float)h / (float)w, 
+                -10.0f, 10.0f);
+    } else {
+        glOrtho(-orthoSize * (float)w / (float)h, 
+                 orthoSize * (float)w / (float)h, 
+                -orthoSize, orthoSize, 
+                -10.0f, 10.0f);
+    }
+
     glMatrixMode(GL_MODELVIEW);
 }
 
-// Inicialização do OpenGL
-void initOpenGL() {
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(windowWidth, windowHeight);
+    glutCreateWindow("Tabuleiro de Xadrez 3D");
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_COLOR_MATERIAL);
 
-    GLfloat light_position[] = { 0.0f, 10.0f, 5.0f, 1.0f };
-    GLfloat light_ambient[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-    GLfloat light_diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-
     initializeBoard();
-}
-
-// Função principal
-int main(int argc, char** argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize(800, 600);
-    glutCreateWindow("Jogo de Damas 3D");
-
-    initOpenGL();
-
     glutDisplayFunc(display);
+    glutMouseFunc(mouse);
     glutReshapeFunc(reshape);
-    glutKeyboardFunc(keyboard);
 
     glutMainLoop();
+
     return 0;
 }
