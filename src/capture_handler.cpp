@@ -1,4 +1,4 @@
-#include "capture_handler.h"
+#include "../include/capture_handler.h"
 
 bool isCapturePossible(const Piece& piece, int targetX, int targetZ, const std::vector<Piece>& pieces) {
     int deltaX = targetX - piece.pos.x;

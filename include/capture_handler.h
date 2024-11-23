@@ -1,7 +1,7 @@
 #ifndef CAPTURE_HANDLER_H
 #define CAPTURE_HANDLER_H
 
-#include "main.h"
+#include "piece.h" // Substitui o main.h
 #include <vector>
 #include <algorithm>
 #include <iostream>

@@ -1,7 +1,7 @@
 #ifndef MOVEMENT_HANDLER_H
 #define MOVEMENT_HANDLER_H
 
-#include "main.h"
+#include "piece.h" // Mover as definições da peça para piece.h
 #include <vector>
 #include <optional>
 #include <algorithm>

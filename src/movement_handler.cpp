@@ -1,4 +1,4 @@
-#include "movement_handler.h"
+#include "../include/movement_handler.h"
 
 bool isValidMove(const Piece& piece, int targetX, int targetZ, bool isWhiteTurn, const std::vector<Piece>& pieces) {
     int deltaX = targetX - piece.pos.x;
