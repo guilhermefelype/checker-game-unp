@@ -191,24 +191,10 @@ void reshape(int w, int h) {
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    
-    // Configuração da projeção ortográfica
-    float orthoSize = 4.0f; // Define o tamanho da visualização
-    if (w <= h) {
-        glOrtho(-orthoSize, orthoSize, 
-                -orthoSize * (float)h / (float)w, 
-                 orthoSize * (float)h / (float)w, 
-                -10.0f, 10.0f);
-    } else {
-        glOrtho(-orthoSize * (float)w / (float)h, 
-                 orthoSize * (float)w / (float)h, 
-                -orthoSize, orthoSize, 
-                -10.0f, 10.0f);
-    }
-
+    aspectRatio = (float)w / (float)h;
+    gluPerspective(45.0f, aspectRatio, 0.1f, 100.0f);
     glMatrixMode(GL_MODELVIEW);
 }
-
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
