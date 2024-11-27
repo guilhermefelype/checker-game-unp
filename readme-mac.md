@@ -9,7 +9,7 @@ Este projeto é um jogo de damas 3D desenvolvido em C++ utilizando OpenGL e GLUT
 Antes de começar, certifique-se de ter instalado:
 
 1. **MinGW (GCC para Windows)**: Compilador necessário para compilar o código C++.
-   - Faça o download do [MinGW](http://www.mingw.org/) e siga as instruções para instalá-lo.
+   - Faça o download do [MinGW](https://sourceforge.net/projects/mingw/) e siga as instruções para instalá-lo.
    - Durante a instalação, certifique-se de selecionar o componente `gcc-g++` para compilar C++.
    - Adicione `C:\MinGW\bin` ao seu PATH do sistema para poder usar o `g++` a partir do terminal.
 
