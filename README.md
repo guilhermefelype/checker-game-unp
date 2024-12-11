@@ -24,7 +24,7 @@ Este é um projeto de um **jogo de damas em 3D**, desenvolvido utilizando **C++*
 
 1. Clone este repositório:
    ```bash
-   git clone https://github.com/seu-usuario/jogo-damas-3d.git
+   git clone https://github.com/guilhermefelype/checker-game-unp.git
 
 2. Compile o código:
     ```bash
